@@ -1,35 +1,34 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-    cors: { origin: "*" } 
+const server = http.createServer(app);
+const io = new Server(server);
+
+// This tells the server to serve your index.html and other files
+app.use(express.static(__dirname));
+
+// This handles the main route and sends your index.html to the browser
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 io.on('connection', (socket) => {
-    console.log('System: A user connected');
+    console.log('A user connected');
 
-    // When a user joins
-    socket.on('add user', (username) => {
-        socket.username = username;
-        console.log(`${username} joined the chat`);
-    });
-
-    // When a message is sent
-    socket.on('new message', (message) => {
-        socket.broadcast.emit('new message', {
-            username: socket.username,
-            message: message
-        });
+    socket.on('chat message', (msg) => {
+        io.emit('chat message', msg);
     });
 
     socket.on('disconnect', () => {
-        if (socket.username) {
-            console.log(`${socket.username} left the chat`);
-        }
+        console.log('User disconnected');
     });
 });
 
-const PORT = 3000;
-http.listen(PORT, () => {
-    console.log(`Server is running on: http://localhost:${PORT}`);
+// Render uses a dynamic port, so we use process.env.PORT
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
