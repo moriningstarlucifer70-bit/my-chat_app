@@ -1,30 +1,35 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http, { cors: { origin: "*" } });
-
-let onlineUsers = 0;
+const io = require('socket.io')(http, {
+    cors: { origin: "*" } 
+});
 
 io.on('connection', (socket) => {
-    onlineUsers++;
-    io.emit('user count', onlineUsers);
+    console.log('System: A user connected');
 
+    // When a user joins
     socket.on('add user', (username) => {
         socket.username = username;
+        console.log(`${username} joined the chat`);
     });
 
-    // Ky kanal dërgon ÇDO GJË: tekst, audio-file, ose sinjale WebRTC
-    socket.on('new message', (data) => {
+    // When a message is sent
+    socket.on('new message', (message) => {
         socket.broadcast.emit('new message', {
             username: socket.username,
-            message: data
+            message: message
         });
     });
 
     socket.on('disconnect', () => {
-        onlineUsers--;
-        io.emit('user count', onlineUsers);
+        if (socket.username) {
+            console.log(`${socket.username} left the chat`);
+        }
     });
 });
 
-http.listen(3000, () => console.log('Server running on http://localhost:3000'));
+const PORT = 3000;
+http.listen(PORT, () => {
+    console.log(`Server is running on: http://localhost:${PORT}`);
+});
