@@ -5,30 +5,35 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
-// This tells the server to serve your index.html and other files
+// I thotë serverit të përdorë skedarët në këtë folder
 app.use(express.static(__dirname));
 
-// This handles the main route and sends your index.html to the browser
+// Rregullon gabimin "Cannot GET /"
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 io.on('connection', (socket) => {
-    console.log('A user connected');
+  console.log('Një përdorues u lidh');
 
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
-    });
+  socket.on('chat message', (msg) => {
+    io.emit('chat message', msg); // Dërgon mesazhin te të gjithë
+  });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+  socket.on('disconnect', () => {
+    console.log('Përdoruesi u shkëput');
+  });
 });
 
-// Render uses a dynamic port, so we use process.env.PORT
+// Render përdor porta dinamike
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Serveri po punon në portën ${PORT}`);
 });
