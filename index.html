@@ -1,91 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Group Chat</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<html>
+  <head>
+    <title>Chati Im Live</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        
-        /* Login Screen */
-        #login-screen { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 320px; }
-        #login-screen h2 { color: #075e54; margin-bottom: 20px; }
-        
-        /* Chat Screen */
-        #chat-screen { display: none; width: 100%; max-width: 450px; height: 90vh; background: white; flex-direction: column; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        header { background: #075e54; color: white; padding: 15px; font-weight: bold; text-align: center; }
-        
-        #messages { flex: 1; overflow-y: auto; padding: 15px; background: #efe7de; display: flex; flex-direction: column; gap: 10px; }
-        
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .mine { background: #dcf8c6; align-self: flex-end; }
-        .others { background: white; align-self: flex-start; }
-        .u-tag { display: block; font-size: 10px; font-weight: bold; color: #128c7e; margin-bottom: 2px; }
-
-        .footer { padding: 10px; background: #f0f0f0; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        button { background: #128c7e; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+      body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+      #messages { list-style-type: none; margin: 0; padding: 0; flex-grow: 1; overflow-y: auto; }
+      #messages li { padding: 8px 10px; border-bottom: 1px solid #eee; }
+      #form { background: #333; padding: 10px; display: flex; }
+      #input { border: none; padding: 10px; flex-grow: 1; border-radius: 5px; }
+      #button { background: #00d1b2; border: none; padding: 10px 20px; margin-left: 10px; color: white; border-radius: 5px; cursor: pointer; }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" placeholder="Shkruaj një mesazh..." /><button id="button">Dërgo</button>
+    </form>
 
-    <div id="login-screen">
-        <h2>Guest Login</h2>
-        <input type="text" id="username" placeholder="Choose a nickname..." style="width: 100%; padding: 10px; margin-bottom: 15px;">
-        <button onclick="start()" style="width: 100%;">Join Chat</button>
-    </div>
-
-    <div id="chat-screen">
-        <header id="h-name">Private Group</header>
-        <div id="messages"></div>
-        <div class="footer">
-            <input type="text" id="msg-input" placeholder="Type a message...">
-            <button onclick="send()">Send</button>
-        </div>
-    </div>
-
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io('http://localhost:3000'); 
-        let currentUser = "";
+      // Kjo lidhet automatikisht me serverin ku është e hostuar faqja
+      const socket = io(); 
 
-        function start() {
-            const name = document.getElementById('username').value;
-            if(name.trim() !== "") {
-                currentUser = name;
-                socket.emit('add user', currentUser);
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('chat-screen').style.display = 'flex';
-                document.getElementById('h-name').innerText = "Logged in as: " + currentUser;
-            }
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
+      const messages = document.getElementById('messages');
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (input.value) {
+          socket.emit('chat message', input.value);
+          input.value = '';
         }
+      });
 
-        function send() {
-            const input = document.getElementById('msg-input');
-            if(input.value.trim() !== "") {
-                socket.emit('new message', input.value);
-                addMessage('You', input.value, true);
-                input.value = "";
-            }
-        }
-
-        socket.on('new message', (data) => {
-            addMessage(data.username, data.message, false);
-        });
-
-        function addMessage(user, text, isMe) {
-            const container = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = `msg ${isMe ? 'mine' : 'others'}`;
-            div.innerHTML = `<span class="u-tag">${user}</span>${text}`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        document.getElementById('msg-input').addEventListener("keypress", (e) => {
-            if (e.key === "Enter") send();
-        });
+      socket.on('chat message', (msg) => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
     </script>
-</body>
+  </body>
 </html>
